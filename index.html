@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Agent 基本功 EP03 — 隨附資料</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#060b1a;--bg-2:#0d1530;--ink:#e8edf8;--ink-2:#b0bdd4;--ink-3:#6b7d9e;
+  --accent:#00d4ff;--accent-2:#ff4d8c;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--ink);
+  min-height:100vh;padding:48px 20px;line-height:1.6}
+.wrap{max-width:760px;margin:0 auto}
+.kicker{font-family:'JetBrains Mono',monospace;color:var(--accent);letter-spacing:3px;
+  font-size:13px;text-transform:uppercase;margin-bottom:14px}
+h1{font-size:clamp(28px,5vw,44px);font-weight:900;line-height:1.2;letter-spacing:-1px}
+.sub{color:var(--ink-3);margin-top:16px;font-size:16px}
+.cta{display:inline-block;margin-top:28px;background:linear-gradient(90deg,var(--accent),var(--accent-2));
+  color:#04101f;font-weight:700;padding:16px 30px;border-radius:12px;text-decoration:none;font-size:18px}
+.cta:hover{opacity:.9}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:40px}
+@media(max-width:600px){.grid{grid-template-columns:1fr}}
+a.card{display:block;background:var(--bg-2);border:1px solid rgba(255,255,255,.08);
+  border-radius:14px;padding:22px;text-decoration:none;color:var(--ink);transition:.25s}
+a.card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.card .t{font-weight:700;font-size:17px}
+.card .d{color:var(--ink-3);font-size:13px;margin-top:6px}
+.tag{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:11px;
+  color:var(--accent-2);border:1px solid var(--accent-2);border-radius:6px;padding:2px 8px;margin-bottom:10px}
+.note{margin-top:40px;padding:18px 20px;background:rgba(0,212,255,.06);
+  border-left:3px solid var(--accent);border-radius:0 10px 10px 0;font-size:14px;color:var(--ink-2)}
+code{font-family:'JetBrains Mono',monospace;background:rgba(255,255,255,.08);
+  padding:2px 7px;border-radius:5px;font-size:13px;color:var(--accent)}
+footer{margin-top:48px;color:var(--ink-3);font-size:13px;text-align:center}
+footer a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kicker">AI Agent 基本功 ・ EP03</div>
+  <h1>Agent 的「手腳」<br>它在你電腦上到底能做什麼</h1>
+  <p class="sub">這一頁有本集所有隨附資料：簡報、老師工具清單、以及給 AI Agent 讀的一鍵安裝檔。</p>
+
+  <a class="cta" href="slides.html">▶ 線上觀看簡報</a>
+
+  <div class="grid">
+    <a class="card" href="EP03_教學檔案處理_工具列表.pdf">
+      <span class="tag">PDF</span>
+      <div class="t">📋 工具列表（一頁式）</div>
+      <div class="d">老師的 Python 神器清單，方便列印下載</div>
+    </a>
+    <a class="card" href="EP03_教學檔案處理_工具列表.md">
+      <span class="tag">Markdown</span>
+      <div class="t">📝 工具列表（可複製）</div>
+      <div class="d">每項都有痛點／套件／一句話，可貼給 Agent</div>
+    </a>
+    <a class="card" href="AGENT_SETUP_教學檔案處理工具包.md">
+      <span class="tag">給 Agent 讀</span>
+      <div class="t">🤖 一鍵安裝檔</div>
+      <div class="d">交給你的 Agent，自動裝好所有套件</div>
+    </a>
+    <a class="card" href="EP03_大綱.md">
+      <span class="tag">Markdown</span>
+      <div class="t">🗂️ 本集大綱</div>
+      <div class="d">每段現場 demo 腳本與口訣</div>
+    </a>
+  </div>
+
+  <div class="note">
+    <strong>🚀 一鍵安裝所有工具：</strong>把「🤖 一鍵安裝檔」交給你的 AI Agent，跟它說
+    <code>讀這份檔案，幫我把裡面的 Python 套件都安裝好</code>，它就會自動完成。
+  </div>
+
+  <footer>
+    製作：三師爸 Sense Bar ・ <a href="https://www.youtube.com/@sensebar">youtube.com/@sensebar</a><br>
+    歡迎自由下載、分享、改作
+  </footer>
+</div>
+</body>
+</html>

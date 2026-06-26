@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Agent基本功 EP03 — Agent 的「手腳」：它在你電腦上到底能做什麼</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #060b1a;
+  --bg-2: #0d1530;
+  --bg-3: #131d40;
+  --ink: #e8edf8;
+  --ink-2: #b0bdd4;
+  --ink-3: #6b7d9e;
+  --ink-4: #3d4d6e;
+  --accent: #00d4ff;
+  --accent-2: #ff4d8c;
+  --warn: #ffb830;
+  --green: #2ecc71;
+  --t1: clamp(36px, 4.2vw, 55px);
+  --t2: clamp(24px, 2.8vw, 34px);
+  --t3: clamp(17px, 1.8vw, 21px);
+  --t4: clamp(13px, 1.1vw, 15px);
+  --s1: 64px;
+  --s2: 40px;
+  --s3: 20px;
+  --s4: 12px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Noto Sans TC', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#progress {
+  position: fixed; top: 0; left: 0; height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  z-index: 1000; transition: width 0.4s ease;
+}
+
+#section-tag {
+  position: fixed; top: 20px; left: 32px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--t4); color: var(--accent);
+  letter-spacing: 2px; z-index: 999;
+  opacity: 0.8; transition: opacity 0.35s;
+}
+
+#pageInfo {
+  position: fixed; bottom: 24px; right: 32px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--t4); color: var(--ink-4);
+  z-index: 999;
+}
+
+#hint {
+  position: fixed; bottom: 24px; left: 32px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; color: var(--ink-4);
+  z-index: 999;
+}
+
+/* Slides */
+.slide {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  padding: 60px 80px;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  transform: translateY(16px);
+  overflow-y: auto;
+}
+.slide.active { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.slide-inner { width: 100%; max-width: 1280px; }
+
+/* Typography */
+h1 { font-size: var(--t1); font-weight: 900; line-height: 1.2; letter-spacing: -1px; }
+h2 { font-size: var(--t2); font-weight: 700; line-height: 1.3; }
+h3 { font-size: var(--t3); font-weight: 700; line-height: 1.4; color: var(--accent); }
+.kicker {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--t4); color: var(--accent);
+  letter-spacing: 3px; text-transform: uppercase;
+  margin-bottom: var(--s3);
+}
+.sub { font-size: var(--t4); color: var(--ink-3); margin-top: var(--s3); line-height: 1.7; }
+.note { font-size: var(--t4); color: var(--ink-4); margin-top: var(--s3); }
+
+/* Grids */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s2); }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s2); }
+.grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+
+/* Cards */
+.card {
+  background: var(--bg-2);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px;
+  padding: var(--s2);
+  transition: border-color 0.3s, transform 0.3s;
+}
+.card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.card .card-icon { font-size: 36px; margin-bottom: 12px; }
+.card .card-title { font-size: var(--t3); font-weight: 700; margin-bottom: 8px; }
+.card .card-body { font-size: var(--t4); color: var(--ink-3); line-height: 1.6; }
+.card.accent { border-color: var(--accent); background: rgba(0,212,255,0.06); }
+.card.accent-2 { border-color: var(--accent-2); background: rgba(255,77,140,0.06); }
+.card.warn { border-color: var(--warn); background: rgba(255,184,48,0.06); }
+.card.green { border-color: var(--green); background: rgba(46,204,113,0.06); }
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; margin-top: var(--s3); }
+th {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: var(--t4); color: var(--accent);
+  text-align: left; padding: 12px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  letter-spacing: 1px;
+}
+td {
+  font-size: var(--t4); color: var(--ink-2);
+  padding: 10px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+tr:hover td { background: rgba(0,212,255,0.04); }
+
+/* Code block */
+.code-block {
+  background: #0a0f1f;
+  border: 1px solid rgba(0,212,255,0.2);
+  border-radius: 12px;
+  padding: 24px 28px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  color: var(--ink-2);
+  line-height: 1.7;
+  white-space: pre-wrap;
+  margin-top: var(--s3);
+}
+.code-block .comment { color: var(--ink-4); }
+.code-block .key { color: var(--accent); }
+.code-block .str { color: var(--green); }
+
+/* Badges */
+.badge {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 600;
+  padding: 4px 10px; border-radius: 6px;
+  letter-spacing: 1px;
+}
+.badge-s { background: rgba(255,77,140,0.2); color: var(--accent-2); }
+.badge-a { background: rgba(255,184,48,0.2); color: var(--warn); }
+.badge-b { background: rgba(46,204,113,0.2); color: var(--green); }
+
+/* Price tag */
+.price { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--ink-4); margin-top: 4px; }
+
+/* Pyramid */
+.pyramid {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 6px; margin: var(--s2) auto; max-width: 500px;
+}
+.pyramid .layer {
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; border-radius: 12px;
+  transition: transform 0.3s;
+}
+.pyramid .layer:hover { transform: scale(1.04); }
+.pyramid .layer-s { width: 240px; padding: 20px; background: rgba(255,77,140,0.2); border: 1px solid var(--accent-2); font-size: var(--t3); color: var(--accent-2); }
+.pyramid .layer-a { width: 320px; padding: 18px; background: rgba(255,184,48,0.15); border: 1px solid var(--warn); font-size: var(--t3); color: var(--warn); }
+.pyramid .layer-b { width: 420px; padding: 16px; background: rgba(46,204,113,0.12); border: 1px solid var(--green); font-size: var(--t3); color: var(--green); }
+
+/* Comparison */
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); margin-top: var(--s3); }
+.compare .col { padding: var(--s2); border-radius: 16px; }
+.compare .col.off { background: rgba(255,77,140,0.08); border: 1px solid rgba(255,77,140,0.2); }
+.compare .col.on  { background: rgba(46,204,113,0.08); border: 1px solid rgba(46,204,113,0.2); }
+.compare .col h3 { color: var(--ink); margin-bottom: 12px; }
+
+/* Flow */
+.flow { display: flex; gap: var(--s3); align-items: center; justify-content: center; margin-top: var(--s3); flex-wrap: wrap; }
+.flow .step {
+  background: var(--bg-3); border-radius: 14px;
+  padding: var(--s3); text-align: center;
+  min-width: 160px; flex: 1; max-width: 200px;
+}
+.flow .step .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 28px; font-weight: 700; color: var(--accent);
+  margin-bottom: 8px;
+}
+.flow .step .label { font-size: var(--t4); color: var(--ink-2); line-height: 1.5; }
+.flow .arrow { font-size: 24px; color: var(--ink-4); }
+
+/* Highlight box */
+.highlight {
+  background: rgba(0,212,255,0.06);
+  border-left: 3px solid var(--accent);
+  padding: 16px 20px; border-radius: 0 10px 10px 0;
+  font-size: var(--t4); color: var(--ink-2); line-height: 1.7;
+  margin-top: var(--s3);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .slide { padding: 32px 24px; }
+  .grid-2, .grid-3, .grid-4, .grid-5 { grid-template-columns: 1fr; }
+  .compare { grid-template-columns: 1fr; }
+  .flow { flex-direction: column; }
+  .flow .arrow { transform: rotate(90deg); }
+  .pyramid .layer-s { width: 180px; padding: 14px; }
+  .pyramid .layer-a { width: 240px; padding: 14px; }
+  .pyramid .layer-b { width: 300px; padding: 12px; }
+}
+</style>
+</head>
+<body>
+
+<div id="progress" style="width:0%"></div>
+<div id="section-tag"></div>
+<div id="pageInfo"></div>
+<div id="hint">← → 切頁 ・ F 全螢幕 ・ 點擊畫面左右切頁</div>
+
+<!-- 1. 封面 -->
+<section class="slide active" data-slide="1" data-section="引起動機">
+<div class="slide-inner" style="text-align:center">
+  <div class="kicker">AI Agent 基本功 ・ EP03</div>
+  <h1 style="font-size:clamp(32px,5vw,64px)">Agent 的「手腳」<br>它在你電腦上到底能做什麼</h1>
+  <p class="sub" style="margin-top:32px;font-size:var(--t3);max-width:680px;margin-inline:auto">
+    讀寫檔案 ・ 執行程式 ・ 上網下載 ・ 產出成品
+  </p>
+  <p class="note" style="margin-top:48px">三師爸 Sense Bar ・ 2026.06</p>
+</div>
+</section>
+
+<!-- 2. EP01/EP02 回顧 -->
+<section class="slide" data-slide="2" data-section="引起動機">
+<div class="slide-inner">
+  <div class="kicker">回顧 ・ EP01 + EP02</div>
+  <h2>前兩集，我們講「觀念」</h2>
+  <div class="grid-2" style="margin-top:var(--s2)">
+    <div class="card accent">
+      <div class="card-icon">📘</div>
+      <div class="card-title">EP01 ・ 入門地圖</div>
+      <div class="card-body">生成式 vs Agent ・ 四大工具 ・ 一桌三櫃法 ・ agent.md 記憶 ・ GitHub 工作流</div>
+    </div>
+    <div class="card accent-2">
+      <div class="card-icon">📗</div>
+      <div class="card-title">EP02 ・ 使用前的觀念</div>
+      <div class="card-body">權限 ・ 全域 vs 專案設定 ・ 用量 ・ LLM 分級 ・ 上下文管理</div>
+    </div>
+  </div>
+  <div class="highlight" style="margin-top:var(--s2)">
+    <strong>觀念都懂了，那它到底能幫我做什麼？</strong>這集開始，我們看 Agent 真正「動手」。
+  </div>
+</div>
+</section>
+
+<!-- 3. 開場定調 -->
+<section class="slide" data-slide="3" data-section="引起動機">
+<div class="slide-inner">
+  <div class="kicker">本集定調</div>
+  <h2>生成式 AI 動嘴，Agent 動手</h2>
+  <div class="compare" style="margin-top:var(--s2)">
+    <div class="col off">
+      <h3>💬 生成式 AI（網頁聊天）</h3>
+      <ul style="color:var(--ink-3);font-size:var(--t4);line-height:2;margin-top:8px;padding-left:20px">
+        <li>只能跟你「聊」、給你文字</li>
+        <li>要你自己複製貼上</li>
+        <li>要你自己存檔、自己整理</li>
+        <li>碰不到你電腦裡的檔案</li>
+      </ul>
+    </div>
+    <div class="col on">
+      <h3>🦾 AI Agent（有手腳）</h3>
+      <ul style="color:var(--ink-3);font-size:var(--t4);line-height:2;margin-top:8px;padding-left:20px">
+        <li>直接讀、改你電腦的檔案</li>
+        <li>自己寫程式、跑程式</li>
+        <li>自己上網查、自己下載</li>
+        <li>把成品直接存成檔案給你</li>
+      </ul>
+    </div>
+  </div>
+  <p class="sub" style="text-align:center;margin-top:var(--s2)">這集是 EP01 那句「Agent 能動手」的<b>兌現集</b>。</p>
+</div>
+</section>
+
+<!-- 4. 本集主軸：工作流四能力 -->
+<section class="slide" data-slide="4" data-section="引起動機">
+<div class="slide-inner">
+  <div class="kicker">本集架構 ・ 能力地圖</div>
+  <h2>一條工作流，四個能力</h2>
+  <div class="flow" style="margin-top:var(--s2)">
+    <div class="step"><div class="num">①</div><div class="label">讀<br>讀寫本地檔案</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="num">②</div><div class="label">處理<br>執行程式與裝工具</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="num">③</div><div class="label">抓<br>上網與下載</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="num">④</div><div class="label">產出<br>生成各種格式檔</div></div>
+  </div>
+  <p class="sub" style="text-align:center;margin-top:var(--s2)">
+    <b>讀進來 → 處理 → 抓資料 → 產出去</b>，剛好是一個完整迴圈。<br>每個能力各示範一個老師情境，當作地圖。
+  </p>
+</div>
+</section>
+
+<!-- 5. 能力① 觀念 -->
+<section class="slide" data-slide="5" data-section="維持注意">
+<div class="slide-inner">
+  <div class="kicker">能力 ① ・ 讀</div>
+  <h2>讀寫本地檔案：所有能力的地基</h2>
+  <div class="grid-3" style="margin-top:var(--s2)">
+    <div class="card accent">
+      <div class="card-icon">👀</div>
+      <div class="card-title">看得到</div>
+      <div class="card-body">你開給它的資料夾，裡面所有檔案它都看得到。</div>
+    </div>
+    <div class="card accent">
+      <div class="card-icon">📖</div>
+      <div class="card-title">讀得懂</div>
+      <div class="card-body">PDF、Word、Excel、txt、圖片裡的文字，都讀得進來。</div>
+    </div>
+    <div class="card accent">
+      <div class="card-icon">✏️</div>
+      <div class="card-title">改得動</div>
+      <div class="card-body">新增、修改、搬移、刪除、改名，全部能做。</div>
+    </div>
+  </div>
+  <div class="highlight" style="margin-top:var(--s2)">
+    它要先「看得到你的檔案」，才能幫你做事 — 這是後面三個能力的前提。
+  </div>
+</div>
+</section>
+
+<!-- 6. 能力① demo -->
+<section class="slide" data-slide="6" data-section="維持注意">
+<div class="slide-inner">
+  <div class="kicker">能力 ① ・ 現場 demo</div>
+  <h2>整理一個凌亂的資料夾</h2>
+  <div class="code-block" style="margin-top:var(--s2)">
+<span class="comment"># 對著一個亂七八糟的資料夾說：</span>
+
+這個資料夾很亂，幫我：
+1. 依檔案類型分到「<span class="str">講義</span>」「<span class="str">考卷</span>」「<span class="str">圖片</span>」「<span class="str">影片</span>」四個子資料夾
+2. 把所有檔名統一改成「<span class="key">日期_主題</span>」的格式
+
+<span class="comment"># 關鍵：做之前先列計畫，我說 OK 再動手</span>
+做之前先給我一個計畫，我確認再執行。
+</div>
+  <p class="sub" style="margin-top:var(--s3)">鏡頭重點：示範「先規劃 → 你確認 → 半自動執行」，呼應 EP02 的 Plan Mode 習慣。</p>
+  <p class="note" style="margin-top:var(--s3)">口訣：<b>它的眼睛和手，都在你開給它的那個資料夾裡。</b></p>
+</div>
+</section>
+
+<!-- 7. 能力② 觀念 -->
+<section class="slide" data-slide="7" data-section="維持注意">
+<div class="slide-inner">
+  <div class="kicker">能力 ② ・ 處理</div>
+  <h2>執行程式與裝工具：你不用會寫程式</h2>
+  <div class="grid-3" style="margin-top:var(--s2)">
+    <div class="card green">
+      <div class="card-icon">✍️</div>
+      <div class="card-title">會寫程式</div>
+      <div class="card-body">你用自然語言講，它幫你把 Python 寫出來。</div>
+    </div>
+    <div class="card green">
+      <div class="card-icon">▶️</div>
+      <div class="card-title">會跑程式</div>
+      <div class="card-body">寫完直接執行，把結果交給你 — 你不用碰程式。</div>
+    </div>
+    <div class="card green">
+      <div class="card-icon">📦</div>
+      <div class="card-title">會裝工具</div>
+      <div class="card-body">缺套件就用 pip 自己裝；複雜工具（如 ffmpeg）也裝得起來。</div>
+    </div>
+  </div>
+  <div class="highlight" style="margin-top:var(--s2)">
+    對老師的意義：批次運算、格式轉換、資料處理這些「人工做很煩」的事，丟給它跑。
+  </div>
+</div>
+</section>
+
+<!-- 8. 能力② demo -->
+<section class="slide" data-slide="8" data-section="維持注意">
+<div class="slide-inner">
+  <div class="kicker">能力 ② ・ 現場 demo</div>
+  <h2>寫一段 Python 幫你算全班成績</h2>
+  <div class="code-block" style="margin-top:var(--s2)">
+<span class="comment"># 準備一份成績 Excel，然後說：</span>
+
+這份 <span class="str">grades.xlsx</span> 是全班段考成績，幫我：
+1. 算出每個人的<span class="key">平均</span>、全班平均、最高最低分
+2. 標出<span class="key">不及格</span>的同學
+3. 用 Python 跑，把結果存成一份<span class="key">新的 Excel</span>
+</div>
+  <p class="sub" style="margin-top:var(--s3)">鏡頭重點：它自己寫 Python、自己跑、必要時自己 <code>pip install</code> 缺的套件，最後丟成品給你。完全不用你懂程式。</p>
+  <p class="note" style="margin-top:var(--s3)">口訣：<b>你不用會寫程式，因為它會寫、也會跑。</b></p>
+</div>
+</section>
+
+<!-- 9. 能力③ 觀念 -->
+<section class="slide" data-slide="9" data-section="維持注意">
+<div class="slide-inner">
+  <div class="kicker">能力 ③ ・ 抓</div>
+  <h2>上網與下載：它抓的是「現在」的網路</h2>
+  <div class="grid-3" style="margin-top:var(--s2)">
+    <div class="card warn">
+      <div class="card-icon">🌐</div>
+      <div class="card-title">自己上網</div>
+      <div class="card-body">開網路、讀網頁、抓你要的資料，不用你一個個開分頁。</div>
+    </div>
+    <div class="card warn">
+      <div class="card-icon">🆕</div>
+      <div class="card-title">抓最新</div>
+      <div class="card-body">和生成式 AI 不同 — 它抓「現在」的網路，不是訓練時的舊記憶。</div>
+    </div>
+    <div class="card warn">
+      <div class="card-icon">⬇️</div>
+      <div class="card-title">能下載</div>
+      <div class="card-body">把圖片、檔案、素材直接下載到你的本機資料夾。</div>
+    </div>
+  </div>
+  <div class="highlight" style="margin-top:var(--s2)">
+    對老師的意義：找最新時事入題、查資料、下載素材，一句話搞定。
+  </div>
+</div>
+</section>
+
+<!-- 10. 能力③ demo -->
+<section class="slide" data-slide="10" data-section="維持注意">
+<div class="slide-inner">
+  <div class="kicker">能力 ③ ・ 現場 demo</div>
+  <h2>上網查資料 / 下載素材</h2>
+  <div class="code-block" style="margin-top:var(--s2)">
+<span class="comment"># 查最新資料：</span>
+上網幫我查「<span class="str">今年的某個時事數據</span>」，
+整理成 3 個重點，<span class="key">附上資料來源連結</span>。
+
+<span class="comment"># 或下載素材：</span>
+幫我到免費圖庫，下載 5 張「<span class="str">適合放在數學簡報</span>」的背景圖，
+存到 <span class="key">slides/</span> 資料夾。
+</div>
+  <p class="sub" style="margin-top:var(--s3)">鏡頭重點：示範「自己上網 → 讀內容 → 抓回來 → 存檔」的完整動作。</p>
+  <p class="note" style="margin-top:var(--s3)">⚠️ 上網與下載是敏感權限：新手保持「需確認」，看清楚要抓的網址再放行。口訣：<b>它上的是現在的網，抓回來的是真檔案。</b></p>
+</div>
+</section>
+
+<!-- 11. 能力④ 觀念 -->
+<section class="slide" data-slide="11" data-section="維持注意">
+<div class="slide-inner">
+  <div class="kicker">能力 ④ ・ 產出</div>
+  <h2>生成各種格式檔：給你的是成品，不是文字</h2>
+  <div class="grid-4" style="margin-top:var(--s2)">
+    <div class="card accent-2"><div class="card-icon">📄</div><div class="card-title">Word</div><div class="card-body">考卷、講義、通知單</div></div>
+    <div class="card accent-2"><div class="card-icon">📊</div><div class="card-title">Excel</div><div class="card-body">成績表、統計表</div></div>
+    <div class="card accent-2"><div class="card-icon">📑</div><div class="card-title">PPT / 圖表</div><div class="card-body">簡報、教學圖表</div></div>
+    <div class="card accent-2"><div class="card-icon">🌐</div><div class="card-title">圖片 / HTML</div><div class="card-body">插圖、互動網頁</div></div>
+  </div>
+  <div class="highlight" style="margin-top:var(--s2)">
+    前三個能力都在「輸入端」，這個是<strong>「輸出端」</strong> — 把成果變成你打開就能用的檔案。
+  </div>
+</div>
+</section>
+
+<!-- 12. 能力④ demo -->
+<section class="slide" data-slide="12" data-section="維持注意">
+<div class="slide-inner">
+  <div class="kicker">能力 ④ ・ 現場 demo</div>
+  <h2>一句話產出一份 Word 考卷</h2>
+  <div class="code-block" style="margin-top:var(--s2)">
+<span class="comment"># 直接說：</span>
+
+幫我出一份國中數學「<span class="str">一元一次方程式</span>」小考：
+- <span class="key">10 題</span>，難度由淺到深，最後 2 題是應用題
+- 附<span class="key">詳解</span>
+- 直接做成一份 <span class="key">Word 檔</span>，題目卷和答案卷分開
+</div>
+  <p class="sub" style="margin-top:var(--s3)">鏡頭重點：成品直接是 .docx，打開就能印 — 這就是「動手」而不是「動嘴」。</p>
+  <p class="note" style="margin-top:var(--s3)">口訣：<b>生成式 AI 給你文字，Agent 給你成品檔。</b></p>
+</div>
+</section>
+
+<!-- 13. 安全收尾 -->
+<section class="slide" data-slide="13" data-section="喚起行動">
+<div class="slide-inner">
+  <div class="kicker">收尾 1 ・ 安全</div>
+  <h2>能力越大，越要回扣權限觀念</h2>
+  <div class="grid-3" style="margin-top:var(--s2)">
+    <div class="card warn">
+      <div class="card-icon">🤝</div>
+      <div class="card-title">半自動為主</div>
+      <div class="card-body">重要動作讓它先規劃、你確認再執行。</div>
+    </div>
+    <div class="card warn">
+      <div class="card-icon">📁</div>
+      <div class="card-title">限制在專案目錄</div>
+      <div class="card-body">別讓它在整顆硬碟亂跑。</div>
+    </div>
+    <div class="card warn">
+      <div class="card-icon">🚫</div>
+      <div class="card-title">不裝來路不明的東西</div>
+      <div class="card-body">尤其會上網、會下載、會裝套件的時候。</div>
+    </div>
+  </div>
+  <div class="highlight" style="margin-top:var(--s2)">
+    一句話：<strong>它比我們可靠，但別把方向盤完全放掉。</strong>
+  </div>
+</div>
+</section>
+
+<!-- 14. 下集預告 -->
+<section class="slide" data-slide="14" data-section="喚起行動">
+<div class="slide-inner">
+  <div class="kicker">收尾 2 ・ 下集預告</div>
+  <h2>能力會了，接下來是「擴充」與「打包」</h2>
+  <div class="grid-2" style="margin-top:var(--s2)">
+    <div class="card accent">
+      <div class="card-icon">🔌</div>
+      <div class="card-title">EP04 ・ 連接外部工具（MCP）</div>
+      <div class="card-body">讓 Agent 不只動本機檔案，還能接你的 Google Drive、Gmail、Classroom、Obsidian — 真正接管你的數位工作。</div>
+    </div>
+    <div class="card accent-2">
+      <div class="card-icon">🧩</div>
+      <div class="card-title">EP05 ・ 技能（Skill）</div>
+      <div class="card-body">把這集的能力「打包成一句話」自動觸發，做出你自己的專屬工作流。</div>
+    </div>
+  </div>
+  <p class="sub" style="text-align:center;margin-top:var(--s2)">本集是「能力地圖」，後面兩集帶你把這些能力組起來變成戰力。</p>
+</div>
+</section>
+
+<!-- 15. 口訣總表 -->
+<section class="slide" data-slide="15" data-section="喚起行動">
+<div class="slide-inner">
+  <div class="kicker">本集口訣總表</div>
+  <h2>四個能力，四句話記起來</h2>
+  <table style="margin-top:var(--s2)">
+    <tr><th>能力</th><th>口訣</th></tr>
+    <tr><td>開場定調</td><td>生成式 AI 動嘴，Agent 動手</td></tr>
+    <tr><td><span class="badge badge-a">①</span> 讀寫檔案</td><td>它的眼睛和手，都在你開給它的那個資料夾裡</td></tr>
+    <tr><td><span class="badge badge-a">②</span> 執行程式</td><td>你不用會寫程式，因為它會寫、也會跑</td></tr>
+    <tr><td><span class="badge badge-a">③</span> 上網下載</td><td>它上的是現在的網，抓回來的是真檔案</td></tr>
+    <tr><td><span class="badge badge-a">④</span> 產出檔案</td><td>生成式 AI 給你文字，Agent 給你成品檔</td></tr>
+    <tr><td>安全</td><td>它比我們可靠，但別把方向盤完全放掉</td></tr>
+  </table>
+</div>
+</section>
+
+<!-- 16. 結語 -->
+<section class="slide" data-slide="16" data-section="喚起行動">
+<div class="slide-inner" style="text-align:center">
+  <div class="kicker">下一步</div>
+  <h1 style="font-size:clamp(28px,4.5vw,52px)">會了這四隻手腳<br>Agent 就能真正幫你做事</h1>
+  <div class="flow" style="margin-top:var(--s2);max-width:900px;margin-inline:auto">
+    <div class="step"><div class="num">①</div><div class="label">讀寫檔案</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="num">②</div><div class="label">執行程式</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="num">③</div><div class="label">上網下載</div></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="num">④</div><div class="label">產出成品</div></div>
+  </div>
+  <p class="sub" style="margin-top:var(--s2);font-size:var(--t3)">EP04 預告：連接外部工具（MCP），讓 Agent 接管你的數位工作</p>
+  <p class="note" style="margin-top:var(--s2)">三師爸 Sense Bar ・ youtube.com/@sensebar</p>
+</div>
+</section>
+
+<script>
+(function() {
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let current = 0;
+
+  const progress = document.getElementById('progress');
+  const sectionTag = document.getElementById('section-tag');
+  const pageInfo = document.getElementById('pageInfo');
+
+  function show(idx) {
+    slides.forEach(s => s.classList.remove('active'));
+    slides[idx].classList.add('active');
+    const section = slides[idx].dataset.section || '';
+    sectionTag.textContent = '— ' + section + ' —';
+    progress.style.width = ((idx + 1) / total * 100) + '%';
+    pageInfo.textContent = (idx + 1) + ' / ' + total;
+    current = idx;
+  }
+
+  function next() { if (current < total - 1) show(current + 1); }
+  function prev() { if (current > 0) show(current - 1); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); next(); }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); prev(); }
+    if (e.key === 'f' || e.key === 'F') {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+      else document.exitFullscreen();
+    }
+  });
+
+  document.addEventListener('click', e => {
+    if (e.target.closest('table') || e.target.closest('.card') || e.target.closest('.code-block')) return;
+    if (e.clientX > window.innerWidth * 0.7) next();
+    else if (e.clientX < window.innerWidth * 0.3) prev();
+  });
+
+  // Touch
+  let startX = 0;
+  document.addEventListener('touchstart', e => { startX = e.touches[0].clientX; });
+  document.addEventListener('touchend', e => {
+    const diff = startX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) { diff > 0 ? next() : prev(); }
+  });
+
+  show(0);
+})();
+</script>
+
+</body>
+</html>

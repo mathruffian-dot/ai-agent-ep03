@@ -1,0 +1,14 @@
+# Google Drive 系統檔
+desktop.ini
+*.tmp
+~$*
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# 暫存
+_preview.*
+*.log
