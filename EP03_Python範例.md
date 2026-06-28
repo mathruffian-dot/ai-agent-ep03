@@ -18,7 +18,7 @@
 | 📕 PDF | `PyMuPDF`、`pypdf`、`pdfplumber`、`pdf2image`、`fpdf2`、`reportlab` | 合併/拆分/抽文字/轉圖/浮水印/生成 |
 | 🔄 轉檔 | `markitdown`、`pdf2image`、`pywin32`(COM) | 各檔互轉、Office 轉 PDF |
 | 🖼️ 圖像/圖表 | `pillow`、`matplotlib`、`qrcode` | 圖片處理、數據圖、QR Code |
-| 🎙️ 語音影音 | `openai-whisper`、`edge-tts`、`yt-dlp` | 字幕、旁白、影片下載 |
+| 🎙️ 語音影音 | `edge-tts`、`yt-dlp`、`youtube-transcript-api` | 旁白、影片下載、抓現成字幕 |
 
 ---
 
@@ -111,22 +111,35 @@
 | 工具 | 一句話 |
 |------|--------|
 | 🔳 連結轉 QR Code（`qrcode`） | 「把這 5 個連結各生一張 QR Code，貼到學習單」 |
-| 📹 影片轉字幕（`yt-dlp`+`openai-whisper`） | 「把這支影片轉成 SRT 字幕」 |
+| 📹 抓 YouTube 現成字幕做逐字稿（`youtube-transcript-api`） | 「抓這支 YouTube 影片的字幕，整理成逐字稿」 |
 | 🔊 講稿轉語音旁白（`edge-tts`） | 「把這份講稿轉成中文語音 mp3」 |
 | 📦 課本轉乾淨文字（`markitdown`） | 「把這份 PDF/PPT 轉成 Markdown 餵 AI」 |
 
 ---
 
-## 四、需要先補裝的套件（安裝缺口提醒）
+## 四、完整環境需求（pip 套件 + 系統工具）
 
-| 套件 | 為什麼需要 | 安裝 |
-|------|-----------|------|
-| `openpyxl` | 目前只有 `xlsxwriter`（**只能寫不能讀**），讀成績 Excel 必備 | `pip install openpyxl` |
-| `pandas` | 成績分析、統計、拆表的主力 | `pip install pandas` |
-| `ocrmypdf` | 掃描講義 OCR（另需系統裝 Tesseract 引擎） | `pip install ocrmypdf` |
-| `docx2pdf`（可選） | Word 轉 PDF 的簡單方案（或直接用已裝的 pywin32 COM） | `pip install docx2pdf` |
+> 不用自己一條條敲——把 [`AGENT_SETUP_教學檔案處理工具包.md`](AGENT_SETUP_教學檔案處理工具包.md)
+> 交給你的 Agent，它會自動裝齊並驗證。以下是它會處理的內容。
 
-> 一鍵補齊：`pip install openpyxl pandas ocrmypdf docx2pdf`
+**pip 套件（一鍵）**
+
+```
+pip install python-docx docxcompose openpyxl xlsxwriter pandas python-pptx pypdf PyMuPDF pdfplumber pdf2image reportlab fpdf2 pillow matplotlib qrcode markitdown ocrmypdf docx2pdf
+```
+
+**系統工具（非 pip，需個別安裝）**
+
+| 工具 | 給誰用 | Windows 安裝 |
+|------|--------|--------------|
+| Tesseract（含繁中包 `chi_tra`） | `ocrmypdf` 掃描 OCR | `winget install UB-Mannheim.TesseractOCR` |
+| Poppler | `pdf2image` PDF 轉圖 | `winget install oschwartz10612.Poppler` |
+| ffmpeg | `yt-dlp` 下載合併 | `winget install Gyan.FFmpeg` |
+| Microsoft Word | `docx2pdf` Word→PDF | 需安裝 Office（無則改用 LibreOffice） |
+
+> ⚠️ **裝完系統工具要重開終端機**：Tesseract / Poppler 安裝後會寫進 PATH，但
+> **目前開著的視窗抓的是舊 PATH**，必須重開一個新的終端機（或重啟 Agent），
+> `ocrmypdf`、`pdf2image` 才找得到它們。這是實測踩到的坑。
 
 ---
 
@@ -137,7 +150,7 @@
   2. **E1+E2 成績全套**——計算、排名、拆班、畫分析圖，命中行政庶務痛點。
   3. **P1 教材變整份 PPT**——備課時間直接砍半。
 - **節奏**：每個格式（Word→Excel→PPT→PDF）各挑 1 個現場 demo，剛好對應「能力② 執行程式」一段。
-- **誠實提醒**：示範前先 `pip install openpyxl pandas`，順便讓觀眾看到「Agent 自己會把缺的套件裝起來」——正好呼應本集「執行程式與裝工具」的主題。
+- **誠實提醒**：示範前若有套件沒裝，讓觀眾看到「Agent 自己會把缺的套件裝起來」——正好呼應本集「執行程式與裝工具」的主題。
 
 ---
 

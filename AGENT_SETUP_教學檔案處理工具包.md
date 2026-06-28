@@ -32,11 +32,15 @@ pip install python-docx docxcompose openpyxl xlsxwriter pandas python-pptx pypdf
 pip install pywin32
 ```
 
-### 影音工具（選用：字幕、旁白、影片下載）
+### 影音工具（選用：旁白、影片下載、抓現成字幕）
 
 ```bash
-pip install openai-whisper edge-tts yt-dlp youtube-transcript-api
+pip install edge-tts yt-dlp youtube-transcript-api
 ```
+
+> 註：本工具包**刻意不含 `openai-whisper`**。它需下載大型語音模型、吃 CPU/GPU，
+> 一般使用者常裝不起來也跑不動。需要影片逐字稿時，改用輕量的
+> `youtube-transcript-api`（直接抓 YouTube 現成字幕，免模型、免 ffmpeg）。
 
 ---
 
@@ -63,9 +67,9 @@ pip install openai-whisper edge-tts yt-dlp youtube-transcript-api
 | `ocrmypdf` | 掃描 PDF 做 OCR（需 Tesseract） |
 | `docx2pdf` | Word 轉 PDF（Windows/Mac，需安裝 Office/Word） |
 | `pywin32` | Windows COM 自動化（控制 Office、轉檔） |
-| `openai-whisper` | 語音轉文字／字幕（需 ffmpeg） |
-| `edge-tts` | 文字轉語音（免費） |
+| `edge-tts` | 文字轉語音（免費、雲端、輕量） |
 | `yt-dlp` | 下載 YouTube 影片／音訊 |
+| `youtube-transcript-api` | 抓 YouTube 現成字幕做逐字稿（輕量、免模型） |
 
 ---
 
@@ -74,22 +78,30 @@ pip install openai-whisper edge-tts yt-dlp youtube-transcript-api
 有些套件需要系統層級的程式才能運作，請依作業系統處理：
 
 ### 1. Tesseract OCR（`ocrmypdf` 需要）
-- **Windows**：`winget install UB-Mannheim.TesseractOCR` 或 `choco install tesseract`，並加裝中文語言包（chi_tra 繁中）。
+- **Windows**：`winget install UB-Mannheim.TesseractOCR`
 - **macOS**：`brew install tesseract tesseract-lang`
 - **Linux (Debian/Ubuntu)**：`sudo apt install tesseract-ocr tesseract-ocr-chi-tra`
+- **繁中語言包（重要）**：Windows 用 winget 靜默安裝只含 `eng`+`osd`，要 OCR 中文需自行補繁中包：
+  下載 [`chi_tra.traineddata`](https://github.com/tesseract-ocr/tessdata_best/raw/main/chi_tra.traineddata)
+  放進 `C:\Program Files\Tesseract-OCR\tessdata\`（寫入需系統管理員權限）。
+  驗證：`tesseract --list-langs` 應出現 `chi_tra`。
 
 ### 2. Poppler（`pdf2image` 需要）
-- **Windows**：`choco install poppler` 或下載 poppler 並加入 PATH。
+- **Windows**：`winget install oschwartz10612.Poppler`
 - **macOS**：`brew install poppler`
 - **Linux**：`sudo apt install poppler-utils`
 
-### 3. ffmpeg（`openai-whisper`、`yt-dlp` 處理音訊需要）
-- **Windows**：`winget install Gyan.FFmpeg` 或 `choco install ffmpeg`
+### 3. ffmpeg（`yt-dlp` 下載與音訊合併需要）
+- **Windows**：`winget install Gyan.FFmpeg`
 - **macOS**：`brew install ffmpeg`
 - **Linux**：`sudo apt install ffmpeg`
 
 ### 4. Microsoft Word／PowerPoint（`docx2pdf`、`pywin32` COM 轉檔需要）
 - 需本機已安裝 Microsoft Office。無 Office 者，Word 轉 PDF 改用 LibreOffice：`soffice --headless --convert-to pdf <檔案>`。
+
+> ⚠️ **裝完系統工具務必重開終端機！** Tesseract / Poppler / ffmpeg 安裝後會寫進 PATH，
+> 但**目前開著的視窗（含你這個 Agent）抓的是舊 PATH**，必須重開一個新的終端機（或重啟 Agent），
+> `ocrmypdf`、`pdf2image`、`yt-dlp` 才找得到它們。安裝完請提醒使用者這一點。
 
 ---
 
